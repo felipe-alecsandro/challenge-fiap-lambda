@@ -1,0 +1,51 @@
+service: challenge-serverless
+org: thiago5g
+app: challenge-serverless
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: us-east-1
+  profile: default
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:*"  
+      Resource: "*"
+
+custom:
+  s3BucketName: challenge
+
+resources:
+  Resources:
+    MyS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3BucketName}
+
+    CognitoUserPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+        UserPoolName: challenge-user-pool
+        UsernameAttributes:
+          - cpf
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+
+    CognitoUserPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+        UserPoolId:
+          Fn::GetAtt:
+            - CognitoUserPool
+            - Id
+        ClientName: challenge-client
+
+plugins:
+  - serverless-aws-documentation
